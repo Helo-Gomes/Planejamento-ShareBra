@@ -1,0 +1,368 @@
+
+<style>
+.root{font-family:var(--font-sans);padding:.75rem 0;}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1.25rem;}
+.tab{padding:6px 14px;border-radius:20px;border:0.5px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:12px;cursor:pointer;}
+.tab.on{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info);font-weight:500;}
+h3{font-size:14px;font-weight:500;color:var(--color-text-primary);margin:0 0 8px;}
+p{font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin:0 0 10px;}
+.cb{background:#1E1E2E;border-radius:10px;padding:12px 14px;margin-bottom:12px;overflow-x:auto;}
+.cb pre{margin:0;font-family:var(--font-mono);font-size:11.5px;line-height:1.9;color:#CDD6F4;white-space:pre;}
+.kw{color:#CBA6F7;}.cm{color:#6C7086;font-style:italic;}.an{color:#A6E3A1;}.cl{color:#89DCEB;}.st{color:#F9E2AF;}
+.day-grid{display:flex;flex-direction:column;gap:8px;}
+.day-row{border-radius:12px;overflow:hidden;border:0.5px solid var(--color-border-tertiary);}
+.day-header{padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;}
+.day-num{font-size:11px;font-weight:500;width:52px;flex-shrink:0;text-align:center;padding:3px 0;border-radius:6px;}
+.day-title{font-size:13px;font-weight:500;color:var(--color-text-primary);flex:1;}
+.day-tag{font-size:10px;padding:2px 8px;border-radius:20px;flex-shrink:0;}
+.day-body{display:none;padding:0 12px 12px;border-top:0.5px solid var(--color-border-tertiary);}
+.day-body.open{display:block;}
+.task-list{list-style:none;padding:0;margin:8px 0 0;}
+.task-list li{font-size:12px;color:var(--color-text-secondary);padding:4px 0;border-bottom:0.5px solid var(--color-border-tertiary);display:flex;align-items:flex-start;gap:7px;line-height:1.5;}
+.task-list li:last-child{border-bottom:none;}
+.dev-badges{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.dev{font-size:10px;padding:1px 7px;border-radius:20px;font-weight:500;}
+.mini{background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+.mini-label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--color-text-secondary);margin-bottom:6px;font-weight:500;}
+.risk{background:var(--color-background-warning);border:0.5px solid var(--color-border-warning);border-radius:8px;padding:9px 12px;margin-bottom:10px;}
+.risk p{color:var(--color-text-warning);margin:0;font-size:12px;}
+</style>
+
+<div class="root">
+<div class="tabs" id="tbar"></div>
+<div id="content"></div>
+</div>
+
+<script>
+const TABS=[{l:'📦 Enums',k:'enums'},{l:'🗂️ Estrutura inicial',k:'struct'},{l:'📅 Semana 1',k:'s1'},{l:'📅 Semana 2',k:'s2'},{l:'👥 Divisão do time',k:'time'}];
+let A=0;
+
+const days1=[
+  {
+    num:'Seg',bg:'#EEEDFE',tc:'#26215C',tag:'Setup',tbg:'#EEEDFE',ttc:'#26215C',
+    title:'GitHub + estrutura + enums',
+    tasks:[
+      {t:'Criar repo no GitHub, branch main + dev + feature/*',devs:['todos']},
+      {t:'Gerar projeto Spring Initializr (Web, JPA, H2, Flyway, Validation, Lombok, Security)',devs:['Dev 1']},
+      {t:'Criar estrutura de pacotes: controller, service, repository, entity, dto, exception, enums',devs:['Dev 1']},
+      {t:'Criar todos os enums (StatusGrupo, StatusDespesa...)',devs:['Dev 2']},
+      {t:'Escrever V1 a V7 das migrations Flyway',devs:['Dev 3']},
+      {t:'Configurar pom.xml + application.properties (H2 + Flyway)',devs:['Dev 4']},
+    ]
+  },
+  {
+    num:'Ter',bg:'#E1F5EE',tc:'#085041',tag:'Usuário + Grupo',tbg:'#E1F5EE',ttc:'#085041',
+    title:'Entidade → Migration → Repository → Service → Controller',
+    tasks:[
+      {t:'Entity: Usuario + Grupo',devs:['Dev 1','Dev 2']},
+      {t:'Repository: UsuarioRepository + GrupoRepository',devs:['Dev 1','Dev 2']},
+      {t:'DTOs: CriarUsuarioRequest, UsuarioResponse, CriarGrupoRequest, GrupoResponse',devs:['Dev 3']},
+      {t:'Service: GrupoService (criar grupo + inserir criador como participante em @Transactional)',devs:['Dev 2']},
+      {t:'Controller: UsuarioController + GrupoController (CRUD básico)',devs:['Dev 1','Dev 4']},
+      {t:'Testar no Postman: POST /usuarios, POST /grupos, GET /grupos/{id}',devs:['todos']},
+    ]
+  },
+  {
+    num:'Qua',bg:'#FAEEDA',tc:'#633806',tag:'Participantes + convite',tbg:'#FAEEDA',ttc:'#633806',
+    title:'Participantes e fluxo de convite',
+    tasks:[
+      {t:'Entity: Participante com enum StatusUsuario',devs:['Dev 2']},
+      {t:'Service: ParticipanteService (convidar + responder convite)',devs:['Dev 3']},
+      {t:'Controller: POST /grupos/{id}/convites, PUT /convites/{id}/responder',devs:['Dev 1']},
+      {t:'GET /convites/pendentes (lista convites do usuário logado)',devs:['Dev 4']},
+      {t:'Testar fluxo completo: criar grupo → convidar → aceitar',devs:['todos']},
+    ]
+  },
+  {
+    num:'Qui',bg:'#FCEBEB',tc:'#791F1F',tag:'Despesas',tbg:'#FCEBEB',ttc:'#791F1F',
+    title:'Registro e divisão de despesas',
+    tasks:[
+      {t:'Entity: Despesa + AtribuicaoDespesa',devs:['Dev 1','Dev 2']},
+      {t:'Service: DespesaService (registrar despesa + validações)',devs:['Dev 3']},
+      {t:'Service: DivisaoService (dividir igualmente — só isso no v1)',devs:['Dev 2']},
+      {t:'Controller: POST /grupos/{id}/despesas, POST /despesas/{id}/dividir',devs:['Dev 4']},
+      {t:'Atualizar totalDespesa no Grupo via @Transactional',devs:['Dev 3']},
+    ]
+  },
+  {
+    num:'Sex',bg:'#E6F1FB',tc:'#0C447C',tag:'Revisão',tbg:'#E6F1FB',ttc:'#0C447C',
+    title:'Code review + resolver travamentos',
+    tasks:[
+      {t:'Cada dev faz PR da feature/* para dev',devs:['todos']},
+      {t:'Rodar o projeto do zero (banco H2 zerado) e testar os fluxos 1 a 4',devs:['todos']},
+      {t:'Documentar no README o que está pronto e o que está pendente',devs:['Dev 1']},
+      {t:'Resolver bugs críticos encontrados na revisão',devs:['todos']},
+    ]
+  },
+];
+
+const days2=[
+  {
+    num:'Seg',bg:'#E1F5EE',tc:'#085041',tag:'Saldos ⭐',tbg:'#E1F5EE',ttc:'#085041',
+    title:'Cálculo de saldo + algoritmo guloso',
+    tasks:[
+      {t:'SaldoService: calcularSaldo (totalPago - totalDevido por participante)',devs:['Dev 2']},
+      {t:'SaldoService: simplificarDividas (algoritmo guloso — transferências mínimas)',devs:['Dev 2']},
+      {t:'GET /grupos/{id}/saldo (saldo individual)',devs:['Dev 3']},
+      {t:'GET /grupos/{id}/saldos (todos os participantes)',devs:['Dev 3']},
+      {t:'GET /grupos/{id}/transacoes-sugeridas ← ponto de destaque da demo',devs:['Dev 1']},
+      {t:'Marcar atribuição como paga: PUT /despesas/{id}/pagar/{participanteId}',devs:['Dev 4']},
+    ]
+  },
+  {
+    num:'Ter',bg:'#FAEEDA',tc:'#633806',tag:'Acerto',tbg:'#FAEEDA',ttc:'#633806',
+    title:'Acerto de contas + status de grupo',
+    tasks:[
+      {t:'GrupoService: lógica de mudança de status (state machine)',devs:['Dev 1']},
+      {t:'Entity: FormaPagamentoAcerto',devs:['Dev 2']},
+      {t:'Service: AcertoService (selecionar forma, confirmar envio, confirmar recebimento)',devs:['Dev 3']},
+      {t:'GET /grupos/{id}/acerto, POST /acerto/{id}/selecionar-pagamento',devs:['Dev 4']},
+      {t:'POST /acerto/{id}/confirmar-envio, POST /acerto/{id}/confirmar-recebimento',devs:['Dev 4']},
+    ]
+  },
+  {
+    num:'Qua',bg:'#EEEDFE',tc:'#26215C',tag:'Finalização + JWT',tbg:'#EEEDFE',ttc:'#26215C',
+    title:'Finalizar grupo + Spring Security + JWT',
+    tasks:[
+      {t:'GrupoService: finalizar grupo (valida se todas as transações estão CONFIRMADAS)',devs:['Dev 1']},
+      {t:'PUT /grupos/{id}/finalizar + GET /grupos/{id}/resumo',devs:['Dev 1']},
+      {t:'Spring Security: SecurityFilterChain (liberar /auth/**, bloquear o resto)',devs:['Dev 2']},
+      {t:'JWT: endpoint /auth/login, geração e validação de token',devs:['Dev 2']},
+      {t:'Filtro JWT (OncePerRequestFilter) registrado na chain',devs:['Dev 3']},
+    ]
+  },
+  {
+    num:'Qui',bg:'#E6F1FB',tc:'#0C447C',tag:'Erro + testes',tbg:'#E6F1FB',ttc:'#0C447C',
+    title:'GlobalExceptionHandler + testes unitários',
+    tasks:[
+      {t:'@RestControllerAdvice: tratar RecursoNaoEncontradoException, MethodArgumentNotValidException',devs:['Dev 4']},
+      {t:'Padronizar envelope de resposta {status, message, data} em todos os endpoints',devs:['Dev 4']},
+      {t:'Testes unitários: DivisaoService (algoritmo), SaldoService (cálculo)',devs:['Dev 3']},
+      {t:'Rodar fluxo completo no Postman: login → criar grupo → despesa → acerto → finalizar',devs:['todos']},
+    ]
+  },
+  {
+    num:'Sex',bg:'#CC092F',tc:'white',tag:'Demo 🎯',tbg:'#CC092F',ttc:'white',
+    title:'Ensaio da demo + README + ajustes finais',
+    tasks:[
+      {t:'Criar coleção Postman organizada por fluxo (Auth → Grupos → Despesas → Acerto)',devs:['Dev 1']},
+      {t:'Criar data.sql com dados de seed para a demo ao vivo',devs:['Dev 2']},
+      {t:'README completo: como rodar, endpoints principais, decisões de escopo',devs:['Dev 3']},
+      {t:'Ensaio completo da demo 3x seguidas (incluindo reiniciar o banco)',devs:['todos']},
+      {t:'Preparar respostas para perguntas esperadas da banca',devs:['todos']},
+    ]
+  },
+];
+
+function renderEnums(){return`
+<h3>Todos os enums do projeto</h3>
+<p>Crie uma pasta <code style="font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);padding:1px 6px;border-radius:4px;">enums/</code> dentro do pacote principal e um arquivo por enum.</p>
+
+${cb(`<span class="kw">public enum</span> <span class="cl">StatusGrupo</span> {
+    <span class="st">GRUPO_CRIADO</span>,    <span class="cm">// grupo criado, ainda sem evento ativo</span>
+    <span class="st">EVENTO_ATIVO</span>,    <span class="cm">// evento em andamento, despesas sendo registradas</span>
+    <span class="st">ACERTO_DE_CONTAS</span>, <span class="cm">// evento encerrado, acertando as contas</span>
+    <span class="st">FINALIZADO</span>,      <span class="cm">// todas as transações confirmadas, grupo encerrado</span>
+    <span class="st">CANCELADO</span>       <span class="cm">// grupo cancelado antes de finalizar</span>
+}`,'StatusGrupo.java')}
+
+${cb(`<span class="kw">public enum</span> <span class="cl">StatusUsuarioGrupo</span> {
+    <span class="st">CRIADOR</span>,     <span class="cm">// quem criou o grupo</span>
+    <span class="st">CONVIDADO</span>,   <span class="cm">// convite enviado, aguardando resposta</span>
+    <span class="st">ACEITOU</span>,     <span class="cm">// aceitou o convite, é membro ativo</span>
+    <span class="st">NEGOU</span>,       <span class="cm">// recusou o convite</span>
+    <span class="st">SAIU</span>         <span class="cm">// era membro, saiu do grupo</span>
+}`,'StatusUsuarioGrupo.java')}
+
+${cb(`<span class="kw">public enum</span> <span class="cl">StatusDespesa</span> {
+    <span class="st">PENDENTE_DE_DIVISAO</span>,   <span class="cm">// registrada, ainda não dividida</span>
+    <span class="st">DIVIDIDA</span>,              <span class="cm">// divisão feita, pagamentos pendentes</span>
+    <span class="st">PENDENTE_DE_APROVACAO</span>, <span class="cm">// despesa retroativa aguardando votos</span>
+    <span class="st">APROVADA</span>,             <span class="cm">// aprovada por maioria (retroativa)</span>
+    <span class="st">REJEITADA</span>,            <span class="cm">// rejeitada por maioria ou empate</span>
+    <span class="st">EM_CONTESTACAO</span>,       <span class="cm">// um participante contestou</span>
+    <span class="st">CANCELADA</span>             <span class="cm">// cancelada pelo criador</span>
+}`,'StatusDespesa.java')}
+
+${cb(`<span class="kw">public enum</span> <span class="cl">StatusPagamento</span> {
+    <span class="st">A_PAGAR</span>,    <span class="cm">// participante ainda deve esse valor</span>
+    <span class="st">PAGO</span>        <span class="cm">// participante pagou sua cota</span>
+}`,'StatusPagamento.java')}
+
+${cb(`<span class="kw">public enum</span> <span class="cl">StatusTransacao</span> {
+    <span class="st">AGUARDANDO_ENVIO</span>,   <span class="cm">// forma de pagamento selecionada</span>
+    <span class="st">ENVIADO</span>,            <span class="cm">// devedor confirmou que enviou</span>
+    <span class="st">CONFIRMADA</span>,         <span class="cm">// credor confirmou que recebeu</span>
+    <span class="st">CONTESTADA</span>          <span class="cm">// credor disse que não recebeu</span>
+}`,'StatusTransacao.java')}
+
+${cb(`<span class="kw">public enum</span> <span class="cl">MeioPagamento</span> {
+    <span class="st">PIX</span>,
+    <span class="st">CARTAO_CREDITO</span>,
+    <span class="st">CARTAO_DEBITO</span>
+}
+
+<span class="kw">public enum</span> <span class="cl">TipoDivisao</span> {
+    <span class="st">IGUAL</span>,        <span class="cm">// divide por igual entre os selecionados</span>
+    <span class="st">PERSONALIZADA</span> <span class="cm">// cada um informa seu valor</span>
+}
+
+<span class="kw">public enum</span> <span class="cl">Voto</span> {
+    <span class="st">APROVAR</span>,
+    <span class="st">REJEITAR</span>
+}
+
+<span class="kw">public enum</span> <span class="cl">RespostaConvite</span> {
+    <span class="st">ACEITAR</span>,
+    <span class="st">RECUSAR</span>
+}`,'Outros enums')}
+
+<div class="risk"><p>⚠️ <strong>Para o v1:</strong> StatusDespesa.EM_CONTESTACAO, PENDENTE_DE_APROVACAO, APROVADA e REJEITADA só são usados no v2 (contestação e despesas retroativas). Crie os enums agora, mas implemente a lógica só depois que o fluxo principal estiver funcionando.</p></div>
+`;}
+
+function renderStruct(){return`
+<h3>Estrutura de pastas e ordem de criação</h3>
+
+${cb(`com.bradesco.sharewallet/
+├── enums/
+│   ├── StatusGrupo.java
+│   ├── StatusUsuarioGrupo.java
+│   ├── StatusDespesa.java
+│   ├── StatusPagamento.java
+│   ├── StatusTransacao.java
+│   ├── MeioPagamento.java
+│   ├── TipoDivisao.java
+│   ├── Voto.java
+│   └── RespostaConvite.java
+│
+├── entity/
+│   ├── Usuario.java
+│   ├── Grupo.java
+│   ├── Participante.java
+│   ├── Despesa.java
+│   ├── AtribuicaoDespesa.java
+│   ├── VotoDespesa.java
+│   └── FormaPagamentoAcerto.java
+│
+├── repository/   (um por entidade — interfaces apenas)
+├── dto/
+│   ├── request/
+│   └── response/
+├── service/
+│   ├── UsuarioService.java
+│   ├── GrupoService.java
+│   ├── ParticipanteService.java
+│   ├── DespesaService.java
+│   ├── DivisaoService.java    ← algoritmo de divisão
+│   ├── SaldoService.java      ← algoritmo guloso ⭐
+│   └── AcertoService.java
+├── controller/   (um por entidade)
+├── exception/
+│   ├── GlobalExceptionHandler.java
+│   └── RecursoNaoEncontradoException.java
+└── security/
+    ├── SecurityConfig.java
+    ├── JwtService.java
+    └── JwtAuthFilter.java`,'Estrutura de pacotes')}
+
+<div class="mini">
+<div class="mini-label">Regra de ouro — ordem de implementação por entidade</div>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.7;">
+Migration → Entity → Repository → DTOs → Service → Controller → Postman test ✅<br>
+Só avance para a próxima entidade depois de testar a atual no Postman.
+</p>
+</div>
+`;}
+
+function renderDays(days){
+  return days.map((d,i)=>`
+<div class="day-row" id="d${i}">
+  <div class="day-header" onclick="tog(${i})">
+    <span class="day-num" style="background:${d.bg};color:${d.tc}">${d.num}</span>
+    <span class="day-title">${d.title}</span>
+    <span class="day-tag" style="background:${d.tbg};color:${d.ttc}">${d.tag}</span>
+  </div>
+  <div class="day-body${i===0?' open':''}" id="db${i}">
+    <ul class="task-list">
+      ${d.tasks.map(t=>`<li>
+        <span style="color:var(--color-text-success)">✓</span>
+        <div>
+          <span>${t.t}</span>
+          <div class="dev-badges">
+            ${t.devs.map(dv=>`<span class="dev" style="background:var(--color-background-secondary);color:var(--color-text-secondary)">${dv}</span>`).join('')}
+          </div>
+        </div>
+      </li>`).join('')}
+    </ul>
+  </div>
+</div>`).join('');
+}
+
+function renderTime(){return`
+<h3>Sugestão de divisão das 4 pessoas</h3>
+<p>Baseado na ordem de dependências — cada dev tem um domínio principal mas contribui com os outros.</p>
+
+<div class="mini">
+<div class="mini-label" style="color:#CC092F;">Dev 1 — Arquitetura e coordenação</div>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.7;">
+Setup do projeto, estrutura de pastas, GrupoController, endpoints de finalização, coleção Postman para demo, README final.<br>
+<strong>Responsabilidade única:</strong> garantir que o projeto roda do zero no computador de qualquer um.
+</p>
+</div>
+
+<div class="mini">
+<div class="mini-label" style="color:#1D9E75;">Dev 2 — Lógica de negócio principal</div>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.7;">
+GrupoService, DivisaoService, <strong>SaldoService com o algoritmo guloso</strong>, Spring Security + JWT.<br>
+<strong>Responsabilidade única:</strong> o algoritmo de transferências mínimas — é o coração técnico do projeto.
+</p>
+</div>
+
+<div class="mini">
+<div class="mini-label" style="color:#7F77DD;">Dev 3 — Migrations e despesas</div>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.7;">
+Todas as migrations Flyway (V1 a V7), DespesaService, endpoints de saldo, testes unitários do DivisaoService e SaldoService.<br>
+<strong>Responsabilidade única:</strong> garantir que nenhuma migration quebre e que as queries de saldo estão corretas.
+</p>
+</div>
+
+<div class="mini">
+<div class="mini-label" style="color:#D85A30;">Dev 4 — Participantes e acerto</div>
+<p style="font-size:13px;color:var(--color-text-secondary);margin:0;line-height:1.7;">
+ParticipanteService, fluxo de convites, AcertoService, FormaPagamentoAcerto, GlobalExceptionHandler e padronização de respostas.<br>
+<strong>Responsabilidade única:</strong> o fluxo de acerto de contas ponta a ponta.
+</p>
+</div>
+
+<div class="risk"><p>⚠️ <strong>Git flow para não quebrar o main:</strong> cada dev trabalha em feature/nome-da-feature, abre PR para dev, o Dev 1 revisa e aprova. Nunca commit direto em main. Main só recebe merge da dev na sexta-feira da semana 2.</p></div>
+`;}
+
+function cb(text,lbl=''){
+  const h = text.replace(/\n/g,'<br>').replace(/  /g,'&nbsp;&nbsp;');
+  return `<div class="cb">${lbl?`<div style="font-size:10px;color:#585B70;font-family:var(--font-mono);margin-bottom:6px;">${lbl}</div>`:''}<pre>${text}</pre></div>`;
+}
+
+const S={
+  enums: renderEnums,
+  struct: renderStruct,
+  s1: ()=>`<h3>Semana 1 — Core do produto</h3><p>Objetivo: grupo criado, despesas registradas e divididas, saldo calculado.</p><div class="day-grid">${renderDays(days1)}</div>`,
+  s2: ()=>`<h3>Semana 2 — Acerto + segurança + demo</h3><p>Objetivo: fluxo completo funcionando, JWT plugado, projeto pronto para apresentar.</p><div class="day-grid">${renderDays(days2)}</div>`,
+  time: renderTime
+};
+
+const tbar=document.getElementById('tbar');
+const content=document.getElementById('content');
+
+function render(){
+  tbar.innerHTML=TABS.map((t,i)=>`<button class="tab${i===A?' on':''}" onclick="go(${i})">${t.l}</button>`).join('');
+  content.innerHTML=S[TABS[A].k]();
+}
+function go(i){A=i;render();}
+
+function tog(i){
+  const body=document.getElementById('db'+i);
+  if(body) body.classList.toggle('open');
+}
+
+render();
+</script>
